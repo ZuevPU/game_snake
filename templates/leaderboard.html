@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Таблица рекордов · Двоичная змейка{% endblock %}
+
+{% block content %}
+<section class="screen active">
+  <div class="card">
+    <p class="eyebrow">Рекорды</p>
+    <h1 class="screen-title">Таблица лидеров</h1>
+    <p class="screen-text">Лучший результат каждого игрока. Обновляется автоматически после каждой игры.</p>
+
+    <ol class="rank-list big" id="rank-list">
+      {% for row in top %}
+        <li{% if session.get('nickname') == row.nickname %} class="me"{% endif %}>
+          <span class="place">{{ loop.index }}</span>
+          <span class="nick">{{ row.nickname }}</span>
+          <span class="pts">{{ row.best }}</span>
+        </li>
+      {% else %}
+        <li class="empty">Пока нет результатов — стань первым!</li>
+      {% endfor %}
+    </ol>
+
+    <div class="actions" style="margin-top:18px;">
+      {% if session.get('nickname') %}
+        <a class="btn btn-primary" href="{{ url_for('play') }}">Играть</a>
+      {% else %}
+        <a class="btn btn-primary" href="{{ url_for('index') }}">Войти</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function refreshBoard(){
+    try{
+      const r = await fetch('/api/leaderboard?limit=50');
+      const data = await r.json();
+      const list = document.getElementById('rank-list');
+      if(!data.leaderboard || !data.leaderboard.length) return;
+      list.innerHTML = data.leaderboard.map((row,i)=>{
+        const me = row.nickname === {{ (session.get('nickname') or '')|tojson }};
+        return `<li${me?' class="me"':''}><span class="place">${i+1}</span>`+
+               `<span class="nick">${row.nickname}</span><span class="pts">${row.best}</span></li>`;
+      }).join('');
+    }catch(e){}
+  }
+  refreshBoard();
+</script>
+{% endblock %}

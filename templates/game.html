@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Игра · Двоичная змейка{% endblock %}
+
+{% block content %}
+<input type="hidden" id="nickname" value="{{ user.nickname }}">
+
+<section id="screen-level" class="screen active">
+  <div class="card">
+    <div class="level-banner">
+      <span class="level-num">Уровень <span id="level-index">1</span> из <span id="level-total">8</span></span>
+      <span class="level-decimal" id="level-decimal">5</span>
+      <span class="level-bits" id="level-bits"></span>
+    </div>
+    <p class="screen-text">Собирай биты <strong>от младшего разряда к старшему</strong>. Как только нажмёшь кнопку — поле появится, змейка начнёт движение.</p>
+    <div class="actions">
+      <button type="button" class="btn btn-primary" id="btn-start-level">Начать уровень</button>
+      <a class="btn btn-ghost" href="{{ url_for('lobby') }}">В меню</a>
+    </div>
+  </div>
+</section>
+
+<section id="screen-game" class="screen">
+  <div class="card" style="padding:18px;">
+    <div class="game-head">
+      <h1>Уровень <span id="round-index">1</span> из <span id="round-total">8</span></h1>
+      <div class="hud" aria-live="polite">
+        <div class="cell"><span class="k">Очки</span><span class="v" id="stat-score">0</span></div>
+        <div class="cell"><span class="k">Личный рекорд</span><span class="v" id="stat-best">{{ user.best_stats()[0] }}</span></div>
+        <div class="cell"><span class="k">Жизни</span><span class="v" id="stat-lives">3</span></div>
+        <div class="cell"><span class="k">Ошибки</span><span class="v" id="stat-errors">0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="board-layout">
+    <div class="card" style="padding:16px;">
+      <div class="field-wrap">
+        <canvas id="field" width="520" height="520" role="img" aria-label="Игровое поле змейки"></canvas>
+      </div>
+      <p class="kbd-hint"><kbd>←↑↓→</kbd> / <kbd>WASD</kbd> — движение · <kbd>Space</kbd> — пауза · <kbd>H</kbd> — подсказка</p>
+      <div class="dpad" role="group" aria-label="Кнопки управления">
+        <button type="button" class="up" data-dir="up" aria-label="Вверх">↑</button>
+        <button type="button" class="left" data-dir="left" aria-label="Влево">←</button>
+        <button type="button" class="right" data-dir="right" aria-label="Вправо">→</button>
+        <button type="button" class="down" data-dir="down" aria-label="Вниз">↓</button>
+      </div>
+    </div>
+
+    <div class="card" style="padding:18px;">
+      <div class="target">
+        <span class="label">Десятичное число</span>
+        <span class="decimal" id="target-decimal">5</span>
+        <div class="mathrow">
+          <div class="mathchip"><span class="k">Текущий разряд</span><span class="v" id="math-place">1</span></div>
+          <div class="mathchip"><span class="k">Остаток</span><span class="v" id="math-remain">5</span></div>
+        </div>
+      </div>
+
+      <div class="progress-label">Собранный код <span id="collected-count" style="color:var(--text-2);font-weight:600;"></span></div>
+      <div class="progress" id="progress" aria-hidden="true"></div>
+
+      <div class="msg info" id="game-msg" role="status" aria-live="assertive">Съешь младший бит.</div>
+
+      <div class="actions" style="margin-top:14px;">
+        <button type="button" class="btn btn-secondary" id="btn-hint">💡 Подсказка</button>
+        <button type="button" class="btn btn-secondary" id="btn-pause">Пауза</button>
+        <button type="button" class="btn btn-ghost" id="btn-restart">Заново</button>
+      </div>
+
+      <ul class="legend">
+        <li><span class="swatch head"></span> Голова</li>
+        <li><span class="swatch body"></span> Тело</li>
+        <li><span class="swatch bit1"></span> Бит 1</li>
+        <li><span class="swatch bit0"></span> Бит 0</li>
+        <li><span class="swatch wall"></span> Стена</li>
+        <li><span class="swatch bonus"></span> Бонус</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="screen-final" class="screen">
+  <div class="card">
+    <p class="eyebrow" id="final-eyebrow">Игра завершена</p>
+    <h1 class="screen-title">Итог игры</h1>
+    <p class="screen-text" id="final-subtitle"></p>
+
+    <div class="final-stats">
+      <div class="final-stat"><span class="k">Очки</span><span class="v" id="final-score">0</span></div>
+      <div class="final-stat"><span class="k">Личный рекорд</span><span class="v" id="final-best">0</span></div>
+      <div class="final-stat"><span class="k">Место</span><span class="v" id="final-rank">—</span></div>
+    </div>
+    <div class="msg ok" id="save-msg" role="status"></div>
+
+    <h2 class="section-h2" style="margin-top:18px;">Разбор чисел</h2>
+    <ul class="review" id="final-review"></ul>
+
+    <div class="actions" style="margin-top:18px;">
+      <button type="button" class="btn btn-primary" id="btn-again">Играть снова</button>
+      <a class="btn btn-secondary" href="{{ url_for('leaderboard') }}">Рекорды</a>
+      <a class="btn btn-ghost" href="{{ url_for('lobby') }}">В меню</a>
+    </div>
+  </div>
+</section>
+
+<div class="overlay" id="pause-overlay" role="dialog" aria-modal="true" aria-label="Пауза">
+  <div class="panel">
+    <h2>Пауза</h2>
+    <p>Игра приостановлена.</p>
+    <button type="button" class="btn btn-primary" id="btn-resume">Продолжить</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+{% endblock %}

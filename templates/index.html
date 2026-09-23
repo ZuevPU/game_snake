@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Вход · Двоичная змейка{% endblock %}
+
+{% block content %}
+<section class="screen active">
+  <div class="card">
+    <div class="hero">
+      <div>
+        <p class="eyebrow">Информатика · 8 класс</p>
+        <h1 class="screen-title">Собери двоичный код змейкой</h1>
+        <p class="screen-text">Переведи десятичное число в двоичную систему: веди змейку к правильным битам и собери код от младшего разряда к старшему. Рекорды сохраняются в базе.</p>
+
+        {% if error %}
+          <div class="msg err" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('login') }}" class="login-form" autocomplete="off">
+          <label for="nickname">Введи свой ник</label>
+          <input id="nickname" name="nickname" type="text" maxlength="20" required
+                 placeholder="например, Котик_2010" autofocus
+                 pattern="[A-Za-zА-Яа-яЁё0-9 _\-]{2,20}">
+          <button type="submit" class="btn btn-primary">Играть</button>
+        </form>
+        <p class="screen-text" style="font-size:13px;margin-top:10px;">
+          Если ник уже занят — ты вернёшься в свой профиль с сохранёнными рекордами.
+        </p>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="vbit off">1</div>
+        <div class="vbit on">0</div>
+        <div class="vbit off">1</div>
+        <div class="vbit off">0</div>
+      </div>
+    </div>
+
+    <div class="rules" style="margin-top:20px;">
+      <strong>Правила</strong>
+      <ol>
+        <li>На экране — <em>десятичное число</em>, его надо перевести в двоичный код.</li>
+        <li>Биты собираются <strong>от младшего разряда к старшему</strong>: сначала правый, потом левее.</li>
+        <li>На поле лежат и <code>0</code>, и <code>1</code> — какой нужен сейчас, решаешь ты.</li>
+        <li>Съел верный бит — он встал на место. Съел неверный — теряешь жизнь.</li>
+        <li>Подсказка <strong>2ⁿ</strong> и «остаток» справа помогают вычислить нужный бит.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+{% endblock %}

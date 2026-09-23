@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="auto">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f7">
+<title>{% block title %}Двоичная змейка{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="logo" aria-hidden="true">🐍</span>
+      <span>Двоичная змейка</span>
+    </a>
+    <div class="tools">
+      {% if session.get('nickname') %}
+        <a class="user-chip" href="{{ url_for('leaderboard') }}" title="Таблица рекордов">
+          <span class="dot"></span>{{ session.get('nickname') }}
+        </a>
+      {% endif %}
+      <button class="icon-btn" id="btn-sound" type="button" aria-pressed="false" aria-label="Звук" title="Звук">🔇</button>
+      <button class="icon-btn" id="btn-theme" type="button" aria-label="Тема" title="Сменить тему">🌗</button>
+      {% if session.get('nickname') %}
+      <form method="post" action="{{ url_for('logout') }}" style="margin:0;">
+        <button class="icon-btn" type="submit" aria-label="Выйти" title="Выйти">⎋</button>
+      </form>
+      {% endif %}
+    </div>
+  </header>
+
+  {% block content %}{% endblock %}
+
+</div>
+
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
