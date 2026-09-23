@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 
 # Свой .env уже загружает config.py (только локальный).
 # Отключаем автозагрузчик Flask, чтобы он не искал .env в родительских папках.
@@ -14,6 +15,7 @@ from flask import (
     session,
     url_for,
 )
+from sqlalchemy import text
 
 from config import Config
 from models import Score, User, db
@@ -27,9 +29,41 @@ db.init_app(app)
 
 # ------------------------------------------------------------------
 # Инициализация БД
+#
+# Важно: под Gunicorn приложение импортируется КАЖДЫМ воркером
+# одновременно. Если просто вызвать db.create_all(), воркеры гонятся
+# за создание одних и тех же таблиц и падают с ошибкой
+# "duplicate key value violates unique constraint pg_class_relname_nsp_index".
+# Поэтому инициализацию сериализуем через advisory-lock PostgreSQL:
+# таблицы создаёт только первый воркер, остальные ждут и видят готовую схему.
 # ------------------------------------------------------------------
-with app.app_context():
-    db.create_all()
+DB_INIT_LOCK_ID = 728274001
+
+
+def init_db():
+    with app.app_context():
+        if db.engine.dialect.name != "postgresql":
+            # SQLite и прочие локальные варианты — блокировка не нужна
+            db.create_all()
+            return
+
+        with db.engine.connect() as conn:
+            conn.execute(text("SELECT pg_advisory_lock(:id)"), {"id": DB_INIT_LOCK_ID})
+            conn.commit()
+            try:
+                db.create_all()
+            finally:
+                conn.execute(
+                    text("SELECT pg_advisory_unlock(:id)"), {"id": DB_INIT_LOCK_ID}
+                )
+                conn.commit()
+
+
+try:
+    init_db()
+except Exception as exc:  # noqa: BLE001
+    # Не роняем воркер: если таблицы уже есть, работать можно.
+    print(f"[init_db] warning: {exc}", file=sys.stderr)
 
 
 # ------------------------------------------------------------------
